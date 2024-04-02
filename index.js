@@ -4,14 +4,19 @@ const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 const ACTIONS = require('./src/Actions');
+const axios = require('axios');
 
 const server = http.createServer(app);
-const io = new Server(server);
 
-// app.use(express.static('build'));
-// app.use((req, res, next) => {
-//     res.sendFile(path.join(__dirname, 'build', 'index.html'));
-// });
+const io = new Server(server);
+const EventSource = require('eventsource');
+const { run } = require('./producer');
+const events = new EventSource('http://localhost:8000/events');
+
+
+
+
+
 
 const userSocketMap = {};
 function getAllConnectedClients(roomId) {
@@ -25,6 +30,21 @@ function getAllConnectedClients(roomId) {
         }
     );
 }
+
+
+const send_code_to_compile = async(src) =>{
+    try {
+        
+        const response = await axios.post('http://localhost:8000/compile',{
+                code: 'Textual content '+src
+            });
+            
+            console.log(response.data);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 
 io.on('connection', (socket) => {
     console.log('socket connected', socket.id);
@@ -44,6 +64,33 @@ io.on('connection', (socket) => {
 
     socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
         socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
+    });
+    socket.on("change_lang", ({ roomId, lang }) => {
+        socket.in(roomId).emit("change_lang", { lang });
+        
+    });
+    
+    socket.on("pm-compile", async({ roomId, code }) => {
+        // socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
+        // console.log(code);
+        // socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code:"milgya bhai code" });
+        // instead of emit push brodcast including me the response of code
+
+        // here push to message queue
+        // and listen forresponse
+        // push_to_kafka()
+
+        // await send_code_to_compile(code)
+        await run({code,roomId,lang:"python"})
+
+        events.onmessage = (event) => {
+            const parsedData = JSON.parse(event.data);
+            
+            console.log(parsedData,"aagya ly queue se");
+            // socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code:parsedData});
+        };
+
+        
     });
 
     socket.on(ACTIONS.SYNC_CODE, ({ socketId, code }) => {
