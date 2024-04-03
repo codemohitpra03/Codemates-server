@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const http = require('http');
 const path = require('path');
-const { Server } = require('socket.io');
+const { Server, Socket } = require('socket.io');
 const ACTIONS = require('./src/Actions');
 const axios = require('axios');
 
@@ -11,7 +11,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 const EventSource = require('eventsource');
 const { run } = require('./producer');
-const events = new EventSource('http://localhost:8000/events');
+
 
 
 
@@ -46,8 +46,12 @@ const send_code_to_compile = async(src) =>{
 }
 
 
-io.on('connection', (socket) => {
+io.on('connection', async(socket) => {
     console.log('socket connected', socket.id);
+    
+
+
+    const events = new EventSource('http://localhost:8000/events?clientId=' + socket.id);
 
     socket.on(ACTIONS.JOIN, ({ roomId, username }) => {
         userSocketMap[socket.id] = username;
@@ -70,24 +74,33 @@ io.on('connection', (socket) => {
         
     });
     
-    socket.on("pm-compile", async({ roomId, code }) => {
+    socket.on("pm-compile", async({ roomId, code,lang,input }) => {
         // socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
         // console.log(code);
-        // socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code:"milgya bhai code" });
-        // instead of emit push brodcast including me the response of code
+        
+        
 
-        // here push to message queue
-        // and listen forresponse
-        // push_to_kafka()
-
-        // await send_code_to_compile(code)
-        await run({code,roomId,lang:"python"})
+        
+        
+        //push msg to message queue
+        await run({
+            code:`
+${code}
+            `,
+            roomId,
+            lang,
+            socketId:socket.id,
+            input:`
+${input}
+            `,
+            
+        })
 
         events.onmessage = (event) => {
             const parsedData = JSON.parse(event.data);
             
-            console.log(parsedData,"aagya ly queue se");
-            // socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code:parsedData});
+            console.log(parsedData,"final output");
+            socket.nsp.in(roomId).emit("output-recieved", { result:parsedData}); //nsp sends to all
         };
 
         
@@ -95,6 +108,10 @@ io.on('connection', (socket) => {
 
     socket.on(ACTIONS.SYNC_CODE, ({ socketId, code }) => {
         io.to(socketId).emit(ACTIONS.CODE_CHANGE, { code });
+    });
+    socket.on("sync_lang", ({ socketId, lang }) => {
+        console.log(lang);
+        io.to(socketId).emit("change_lang", { lang });
     });
 
     socket.on('disconnecting', () => {

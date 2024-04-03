@@ -3,7 +3,7 @@ async function run(msg){
     try {
         const kafka = new Kafka({
             "clientId":"codemates",
-            "brokers":["localhost:9092"]
+            "brokers":[`${process.env.kakfka_ip}:9092`]
         })
 
         const producer = kafka.producer()
