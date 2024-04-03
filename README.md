@@ -15,7 +15,7 @@ The Backend server manages sockets and manages the code execution requests by be
 
 **Technologies Used:**
 - Backend: Node.js, Express.js, Kafka
-- Languages: C++, Java, JavaScript, Python
+- Languages supported: C++, Java, JavaScript, Python
 
 
 
@@ -78,7 +78,7 @@ To run Other services, Go to below listed repositories and follow the instructio
 
 To run this project, you will need to add the following environment variables to your .env file
 
-`KAFKA IP` IP address of machine where kafka is running. Pass this as the private ip while running locally.
+`KAFKA_IP` IP address of machine where kafka is running. Pass this as the private ip while running locally.
 
 
 
