@@ -8,7 +8,7 @@
 *Backend Server for Real-Time Collaborative Code Editor and Compiler Platform*
 
 **Overview:**
-The Backend server manages sockets and manages the code execution requests
+The Backend server manages sockets and manages the code execution requests by being a *producer* for *message queue*.
 
 
 
