@@ -62,6 +62,7 @@ io.on('connection', async(socket) => {
                 clients,
                 username,
                 socketId: socket.id,
+                
             });
         });
     });
@@ -101,6 +102,7 @@ ${input}
             
             console.log(parsedData,"final output");
             socket.nsp.in(roomId).emit("output-recieved", { result:parsedData}); //nsp sends to all
+            
         };
 
         
@@ -109,9 +111,12 @@ ${input}
     socket.on(ACTIONS.SYNC_CODE, ({ socketId, code }) => {
         io.to(socketId).emit(ACTIONS.CODE_CHANGE, { code });
     });
-    socket.on("sync_lang", ({ socketId, lang }) => {
-        console.log(lang);
-        io.to(socketId).emit("change_lang", { lang });
+    socket.on("sync-output", ({ socketId, output }) => {
+        console.log(output,"ooooo");
+        if(output){
+
+            io.to(socketId).emit("output-recieved", { result:output });
+        }
     });
 
     socket.on('disconnecting', () => {
